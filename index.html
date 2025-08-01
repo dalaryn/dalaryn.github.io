@@ -1,39 +1,72 @@
-
 <!DOCTYPE html>
-<html>
-<html>
+<html lang="en">
 <head>
-	<meta charset="UTF-8">
-	<meta name="viewport" content="width=device-width, initial-scale=1.0">
-	<meta name="description" content="X-Frame-Bypass: Web Component extending IFrame to bypass X-Frame-Options: deny/sameorigin">
-	<title>X-Frame-Bypass Web Component Demo</title>
-	<style>
-		html, body {
-			margin: 0;
-			padding: 0;
-			height: 350;
-			width: 350;
-			overflow: hidden;
-		}
-		iframe {
-			display: block;
-			height: 350;
-			width: 350;
-			margin: 20px;
-		}
-		img {
-			position: absolute;
-			top: 0;
-			right: 0;
-		}
-	</style>
-	<script src="js/custom-elements-builtin.js"></script>
-	<script src="js/x-frame-bypass.js" type="module"></script>
+  <meta charset="UTF-8" />
+  <title>Iframe Header Fetch</title>
+  <style>
+    body { font-family: sans-serif; padding: 20px; }
+    iframe { width: 100%; height: 200px; border: 1px solid #ccc; }
+    pre { background: #eee; padding: 10px; }
+    button { margin-top: 10px; padding: 8px 12px; }
+  </style>
+  <script src="https://dalaryn.github.io/js/x-frame-bypass.js" type="module"></script>
 </head>
 <body>
-<h2>If the Web Application below is loaded, it is vulnerable to Clickjacking</h2>
-	<iframe src="https://campusguard.com" height="250" width="600" samesite=none secure=true></iframe>
-<h2>If the Web Application below is loaded, it is vulnerable to Clickjacking using a CORS bypass</h2>
-	<iframe is="x-frame-bypass" src="https://campusguard.com" height="250" width="600" samesite=none secure=true></iframe>
+  <h1>If Site Loads Below, it is Vulnerable to Clickjacking</h1>
+  <input type="text" id="urlInput" placeholder="Enter URL here" style="width: 100%; padding: 8px;" />
+  <button id="loadFrameCJ">Load Iframe</button>
+  <iframe id="myFrameCJ" src=""></iframe>
+  <script>
+    const iframeCJ = document.getElementById('myFrameCJ');
+    const urlInputCJ = document.getElementById('urlInput');
+
+    document.getElementById('loadFrameCJ').addEventListener('click', () => {
+      iframeCJ.src = urlInputCJ.value;
+    });
+  </script>
+  
+  <h1>If Site Loads Below, it is Vulnerable to CORS Frame Bypass</h1>
+  <button id="loadFrame">Load Iframe</button>
+  <iframe is="x-frame-bypass" id="myFrame" src=""></iframe>
+  <button id="fetchHeaders">Fetch Headers</button>
+  <pre id="headers">Click "Fetch Headers" to view response headers.</pre>
+
+  <script>
+    const iframe = document.getElementById('myFrame');
+    const headersDisplay = document.getElementById('headers');
+    const urlInput = document.getElementById('urlInput');
+
+    document.getElementById('loadFrame').addEventListener('click', () => {
+      iframe.src = urlInput.value;
+      headersDisplay.textContent = 'Iframe loaded. Click "Fetch Headers" to get headers.';
+    });
+
+    document.getElementById('fetchHeaders').addEventListener('click', () => {
+      const url = iframe.src;
+      if (!url) {
+        headersDisplay.textContent = 'Please load a URL into the iframe first.';
+        return;
+      }
+
+      const proxyUrl = 'https://cors-anywhere.herokuapp.com/' + url;
+
+      fetch(proxyUrl, {
+        method: 'GET',
+        headers: {
+          'x-requested-with': 'XMLHttpRequest'
+        }
+      })
+      .then(response => {
+        const headers = {};
+        for (let [key, value] of response.headers.entries()) {
+          headers[key] = value;
+        }
+        headersDisplay.textContent = JSON.stringify(headers, null, 2);
+      })
+      .catch(err => {
+        headersDisplay.textContent = 'Error: ' + err;
+      });
+    });
+  </script>
 </body>
 </html>
